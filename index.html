@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Modbus RTU 工具集导航：从站模拟器与主站扫描工具">
+<title>MZZG 的工具集</title>
+<style>
+/* SECTION: base */
+*, *::before, *::after { box-sizing: border-box; }
+
+:root {
+  --ink: #f2f8ff;
+  --ink-dim: rgba(242, 248, 255, .72);
+  --ink-faint: rgba(242, 248, 255, .5);
+  --accent: #7fd8ff;
+  --glass: rgba(255, 255, 255, .1);
+  --glass-brd: rgba(255, 255, 255, .22);
+  --deep: #06263f;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  color: var(--ink);
+  background: linear-gradient(160deg, #0a3557 0%, #1a6ea8 55%, #cfe3ef 100%);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* SECTION: background */
+.bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bg-veil {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, rgba(4, 26, 45, .62) 0%, rgba(4, 26, 45, .3) 38%, rgba(4, 26, 45, .06) 62%, rgba(6, 32, 54, .34) 100%),
+    radial-gradient(120% 80% at 50% 42%, rgba(4, 26, 45, .18) 0%, rgba(4, 26, 45, .42) 100%);
+}
+
+/* SECTION: layout */
+.shell {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(56px, 12vh, 120px) clamp(20px, 5vw, 48px) clamp(96px, 16vh, 140px);
+}
+
+.content {
+  width: 100%;
+  max-width: 880px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: clamp(28px, 5vh, 44px);
+}
+
+/* SECTION: header */
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border: 1px solid var(--glass-brd);
+  border-radius: 999px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  font-size: 12.5px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.kicker .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+h1 {
+  margin: 14px 0 0;
+  font-size: clamp(30px, 6.2vw, 52px);
+  font-weight: 650;
+  letter-spacing: .01em;
+  line-height: 1.16;
+  text-shadow: 0 2px 26px rgba(3, 22, 40, .5);
+}
+
+.subtitle {
+  margin: 12px 0 0;
+  max-width: 40em;
+  font-size: clamp(14px, 2vw, 16px);
+  line-height: 1.75;
+  color: var(--ink-dim);
+  text-shadow: 0 1px 14px rgba(3, 22, 40, .45);
+}
+
+/* SECTION: cards */
+.cards {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: clamp(14px, 2vw, 20px);
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  padding: clamp(20px, 3vw, 26px);
+  border: 1px solid var(--glass-brd);
+  border-radius: 18px;
+  background: linear-gradient(150deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .06));
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: 0 14px 40px rgba(3, 22, 40, .26);
+  color: var(--ink);
+  text-decoration: none;
+  text-align: left;
+  overflow: hidden;
+  transition: transform .28s cubic-bezier(.2, .8, .2, 1), box-shadow .28s, border-color .28s, background .28s;
+}
+
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(120% 100% at 0% 0%, rgba(127, 216, 255, .2), transparent 60%);
+  opacity: 0;
+  transition: opacity .3s;
+  pointer-events: none;
+}
+
+.card:hover, .card:focus-visible {
+  transform: translateY(-5px);
+  border-color: rgba(127, 216, 255, .6);
+  box-shadow: 0 22px 54px rgba(3, 22, 40, .34);
+  outline: none;
+}
+
+.card:hover::after, .card:focus-visible::after { opacity: 1; }
+
+.card:active { transform: translateY(-1px); }
+
+.card .icon {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: rgba(6, 38, 63, .38);
+  border: 1px solid rgba(127, 216, 255, .34);
+}
+
+.card .icon svg { width: 22px; height: 22px; display: block; }
+
+.card h2 {
+  margin: 0;
+  font-size: clamp(16.5px, 2.2vw, 18.5px);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: .01em;
+}
+
+.card .tag {
+  display: inline-block;
+  font-size: 11.5px;
+  letter-spacing: .1em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.card p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--ink-dim);
+}
+
+.card .go {
+  margin-top: auto;
+  padding-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--accent);
+}
+
+.card .go svg { width: 14px; height: 14px; transition: transform .28s; }
+.card:hover .go svg { transform: translateX(4px); }
+
+/* SECTION: footer + counter */
+.foot {
+  margin-top: clamp(26px, 5vh, 40px);
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  letter-spacing: .04em;
+}
+
+.counter {
+  position: fixed;
+  right: clamp(14px, 2.6vw, 26px);
+  bottom: clamp(14px, 2.6vw, 26px);
+  z-index: 5;
+  line-height: 0;
+}
+
+.counter img {
+  display: block;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 2px 10px rgba(3, 22, 40, .45));
+}
+
+.counter img[hidden] { display: none; }
+
+/* SECTION: typewriter */
+.subtitle .cursor {
+  display: inline-block;
+  width: .55em;
+  margin-left: 2px;
+  vertical-align: baseline;
+  color: var(--ink);
+  animation: blink .9s steps(1) infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* SECTION: responsive */
+@media (max-width: 560px) {
+  .cards { grid-template-columns: 1fr; }
+  .content { gap: 26px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- SECTION: background -->
+<img class="bg-layer" id="bg" alt="" data-image="https://agent.qianwen.com/uploads/8c306b0b4348a6eb367493cd83895ddf.png">
+<div class="bg-veil"></div>
+
+<!-- SECTION: main -->
+<main class="shell">
+  <div class="content">
+
+    <header>
+      <span class="kicker"><span class="dot"></span>MZZG · Toolset</span>
+      <h1>MZZG 的工具集</h1>
+      <p class="subtitle"><span id="subtitleText"></span><span class="cursor">_</span></p>
+    </header>
+
+    <nav class="cards" aria-label="工具导航">
+
+      <a class="card" href="https://mzzg.github.io/Modbus_RTU_Slave_Simulation/" target="_blank" rel="noopener">
+        <span class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#7fd8ff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="12" rx="2.5"/>
+            <path d="M7 20h10M12 16v4M7.5 9.5h4M7.5 12.5h6.5"/>
+            <circle cx="17" cy="9" r="1.2" fill="#7fd8ff" stroke="none"/>
+          </svg>
+        </span>
+        <span>
+          <span class="tag">Slave</span>
+          <h2>Modbus RTU 从站模拟</h2>
+        </span>
+        <p>在浏览器里模拟一台 RTU 从站设备，可自定义从站地址、寄存器数值并实时响应主站请求。</p>
+        <span class="go">打开工具
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
+
+      <a class="card" href="https://mzzg.github.io/Modbus_RTU_Scan/" target="_blank" rel="noopener">
+        <span class="icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#7fd8ff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="10.5" cy="10.5" r="6.5"/>
+            <path d="M15.4 15.4 21 21"/>
+            <path d="M7.6 10.5h5.8M10.5 7.6v5.8"/>
+          </svg>
+        </span>
+        <span>
+          <span class="tag">Master</span>
+          <h2>Modbus RTU 扫描</h2>
+        </span>
+        <p>批量扫描总线上的从站地址与功能码，快速摸清设备分布，定位通讯不通的节点。</p>
+        <span class="go">打开工具
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+        </span>
+      </a>
+
+    </nav>
+
+    <p class="foot">© MZZG · Hosted on GitHub Pages</p>
+  </div>
+</main>
+
+<!-- SECTION: counter -->
+<div class="counter">
+  <img id="visitCount" alt="网站访问计数" loading="lazy" referrerpolicy="no-referrer"
+    data-image="https://count.getloli.com/@MZZG?theme=booru-lewd&padding=6&offset=0&align=top&scale=1.5&pixelated=1&darkmode=auto">
+</div>
+
+<script>
+/* SECTION: bootstrap */
+(function () {
+  // 远程图片统一通过 data-image 运行时注入，源码中不写死 src 字面量
+  var counter = document.getElementById('visitCount');
+  counter.src = counter.dataset.image;
+  counter.addEventListener('error', function () { counter.hidden = true; });
+
+  var bg = document.getElementById('bg');
+  var remote = bg.dataset.image;
+
+  // 优先使用与本页面同目录的 background.png（GitHub 仓库里的图）；
+  // 取不到时自动回退到远程地址，保证任何环境下都有背景。
+  var LOCAL_BG = 'background.png';
+  fetch(LOCAL_BG, { method: 'HEAD' })
+    .then(function (r) { bg.src = (r && r.ok) ? LOCAL_BG : remote; })
+    .catch(function () { bg.src = remote; });
+
+  // 副标题打字机效果
+  var text = '欢迎访问喵';
+  var el = document.getElementById('subtitleText');
+  var i = 0;
+  function typeChar() {
+    if (i < text.length) {
+      el.textContent += text[i];
+      i++;
+      setTimeout(typeChar, 120);
+    }
+  }
+  setTimeout(typeChar, 400);
+})();
+</script>
+</body>
+</html>
